@@ -28,6 +28,7 @@ import {
   BracketType,
   MatchGameServiceClient,
   CreateMatchGameRequest,
+  UpdateMatchGameRequest,
   MatchGameMutation,
   GameSlotMutation,
   GameParticipantMutation,
@@ -598,14 +599,7 @@ export interface ParryGameData {
   slots: ParryGameSlot[];
 }
 
-export async function createParryggMatchGame(
-  apiKey: string,
-  matchId: string,
-  gameData: ParryGameData,
-): Promise<void> {
-  const request = new CreateMatchGameRequest();
-  request.setMatchId(matchId);
-
+function buildMatchGameMutation(gameData: ParryGameData): MatchGameMutation {
   const mutation = new MatchGameMutation();
   mutation.setIndex(gameData.gameIndex);
   mutation.setState(MatchGameState.MATCH_GAME_STATE_COMPLETED);
@@ -640,9 +634,43 @@ export async function createParryggMatchGame(
   });
 
   mutation.setSlotsList(slotMutations);
-  request.setMatchGame(mutation);
+  return mutation;
+}
 
-  await matchGameClient.createMatchGame(request, createAuthMetadata(apiKey));
+export async function createParryggMatchGame(
+  apiKey: string,
+  matchId: string,
+  gameData: ParryGameData,
+): Promise<void> {
+  const mutation = buildMatchGameMutation(gameData);
+
+  // Try to create first
+  try {
+    const createRequest = new CreateMatchGameRequest();
+    createRequest.setMatchId(matchId);
+    createRequest.setMatchGame(mutation);
+    await matchGameClient.createMatchGame(
+      createRequest,
+      createAuthMetadata(apiKey),
+    );
+  } catch (e: unknown) {
+    // If game already exists (duplicate key), try to update instead
+    if (
+      e instanceof Error &&
+      e.message.includes('duplicate key value violates unique constraint')
+    ) {
+      const updateRequest = new UpdateMatchGameRequest();
+      updateRequest.setMatchId(matchId);
+      updateRequest.setIndex(gameData.gameIndex);
+      updateRequest.setMatchGame(mutation);
+      await matchGameClient.updateMatchGame(
+        updateRequest,
+        createAuthMetadata(apiKey),
+      );
+    } else {
+      throw e;
+    }
+  }
 }
 
 export function getSeedMap(): Map<string, Seed.AsObject> {
