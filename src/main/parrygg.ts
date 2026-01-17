@@ -28,6 +28,7 @@ import {
   BracketType,
   MatchGameServiceClient,
   CreateMatchGameRequest,
+  DeleteMatchGameRequest,
   MatchGameMutation,
   GameSlotMutation,
   GameParticipantMutation,
@@ -652,13 +653,28 @@ export async function createParryggMatchGame(
       createAuthMetadata(apiKey),
     );
   } catch (e: unknown) {
-    // If game already exists (duplicate key), silently skip
-    // The game data is already present from a previous report
+    // If game already exists (duplicate key), delete and recreate
     if (
       e instanceof Error &&
       e.message.includes('duplicate key value violates unique constraint')
     ) {
-      // Game already exists, nothing to do
+      // Delete the existing game
+      const deleteRequest = new DeleteMatchGameRequest();
+      deleteRequest.setMatchId(matchId);
+      deleteRequest.setIndex(gameData.gameIndex);
+      await matchGameClient.deleteMatchGame(
+        deleteRequest,
+        createAuthMetadata(apiKey),
+      );
+
+      // Create the game again with updated data
+      const createRequest = new CreateMatchGameRequest();
+      createRequest.setMatchId(matchId);
+      createRequest.setMatchGame(mutation);
+      await matchGameClient.createMatchGame(
+        createRequest,
+        createAuthMetadata(apiKey),
+      );
       return;
     }
     throw e;
