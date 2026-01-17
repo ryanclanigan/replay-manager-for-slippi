@@ -91,6 +91,7 @@ import {
   getSelectedParryggSetChain,
   createParryggMatchGame,
   ParryGameData,
+  deleteParryggMatchGames,
 } from './parrygg';
 import {
   appendEnforcerResult,
@@ -1260,10 +1261,14 @@ export default function setupIPCs(
 
       // Create match games with character selections if game data provided
       if (gameDataList && gameDataList.length > 0) {
+        // Delete games first. This is to handle the case where games are edited. If not games, exist, no-ops
+        await deleteParryggMatchGames(parryggApiKey, setId);
         await Promise.all(
-          gameDataList.map((gameData) =>
-            createParryggMatchGame(parryggApiKey, setId, gameData),
-          ),
+          gameDataList
+            .sort((a, b) => a.gameIndex - b.gameIndex)
+            .map((gameData) =>
+              createParryggMatchGame(parryggApiKey, setId, gameData),
+            ),
         );
       }
 

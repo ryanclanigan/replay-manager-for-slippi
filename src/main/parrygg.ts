@@ -34,8 +34,9 @@ import {
   GameParticipantMutation,
   CharacterSelection,
   MatchGameState,
+  GetMatchRequest,
 } from '@parry-gg/client';
-import * as protobufHelper from 'google-protobuf/google/protobuf/struct_pb';
+import { Struct, Value } from 'google-protobuf/google/protobuf/struct_pb';
 import XMLHttpRequest from 'xhr2';
 import {
   ParryggBracket,
@@ -237,7 +238,7 @@ export function convertParryggSetToSet(set: Match.AsObject): Set {
     station: null,
     ordinal: setIdToOrdinal.get(set.id) ?? null,
     wasReported: false,
-    updatedAtMs: set.stateUpdatedAt.seconds * 1000,
+    updatedAtMs: set.stateUpdatedAt!.seconds * 1000,
     completedAtMs: 0,
   };
 }
@@ -511,7 +512,7 @@ export async function getParryggTournaments(
   return response
     .getTournamentsList()
     .sort((a, b) => {
-      return b.getStartDate().getSeconds() - a.getStartDate().getSeconds();
+      return b.getStartDate()!.getSeconds() - a.getStartDate()!.getSeconds();
     })
     .map((tournament) => ({
       id: tournament.getId(),
@@ -616,10 +617,10 @@ function buildMatchGameMutation(gameData: ParryGameData): MatchGameMutation {
       const charSelection = new CharacterSelection();
       charSelection.setCharacterSlug(p.characterSlug);
       if (p.colorVariant) {
-        const variant = new protobufHelper.Struct();
+        const variant = new Struct();
         variant
           .getFieldsMap()
-          .set('color', protobufHelper.Value.fromJavaScript(p.colorVariant));
+          .set('color', Value.fromJavaScript(p.colorVariant));
         charSelection.setVariant(variant);
       }
       participant.setCharactersList([charSelection]);
@@ -640,39 +641,33 @@ export async function createParryggMatchGame(
   gameData: ParryGameData,
 ): Promise<void> {
   const mutation = buildMatchGameMutation(gameData);
+  const createRequest = new CreateMatchGameRequest();
+  createRequest.setMatchId(matchId);
+  createRequest.setMatchGame(mutation);
+  await matchGameClient.createMatchGame(
+    createRequest,
+    createAuthMetadata(apiKey),
+  );
+}
 
-  try {
-    const createRequest = new CreateMatchGameRequest();
-    createRequest.setMatchId(matchId);
-    createRequest.setMatchGame(mutation);
-    await matchGameClient.createMatchGame(
-      createRequest,
-      createAuthMetadata(apiKey),
-    );
-  } catch (e: unknown) {
-    // If game already exists (duplicate key), delete and recreate
-    if (
-      e instanceof Error &&
-      e.message.includes('duplicate key value violates unique constraint')
-    ) {
-      // Delete the existing game
+export async function deleteParryggMatchGames(
+  apiKey: string,
+  matchId: string,
+): Promise<void> {
+  const matchRequest = new GetMatchRequest();
+  matchRequest.setId(matchId);
+  const matchResponse = await matchClient.getMatch(
+    matchRequest,
+    createAuthMetadata(apiKey),
+  );
+  await Promise.all(
+    matchResponse.toObject().match!.matchGamesList.map(async (game) => {
       const deleteRequest = new DeleteMatchGameRequest();
-      deleteRequest.setId(matchId);
+      deleteRequest.setId(game.id);
       await matchGameClient.deleteMatchGame(
         deleteRequest,
         createAuthMetadata(apiKey),
       );
-
-      // Create the game again with updated data
-      const createRequest = new CreateMatchGameRequest();
-      createRequest.setMatchId(matchId);
-      createRequest.setMatchGame(mutation);
-      await matchGameClient.createMatchGame(
-        createRequest,
-        createAuthMetadata(apiKey),
-      );
-      return;
-    }
-    throw e;
-  }
+    }),
+  );
 }
