@@ -90,7 +90,6 @@ import {
   getAdminedParryggTournaments,
   getSelectedParryggSetChain,
   createParryggMatchGame,
-  getSeedMap,
   ParryGameData,
 } from './parrygg';
 import {
@@ -1279,15 +1278,6 @@ export default function setupIPCs(
       return updatedSet;
     },
   );
-
-  ipcMain.removeHandler('getParryggSeedMap');
-  ipcMain.handle('getParryggSeedMap', () => {
-    const seedMapObj: Record<string, any> = {};
-    getSeedMap().forEach((value, key) => {
-      seedMapObj[key] = value;
-    });
-    return seedMapObj;
-  });
 
   ipcMain.removeHandler('getOfflineModeStatus');
   ipcMain.handle('getOfflineModeStatus', getOfflineModeStatus);

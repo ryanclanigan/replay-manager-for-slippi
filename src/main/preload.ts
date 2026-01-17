@@ -1,38 +1,34 @@
+import { MatchResult, Tournament as ParryggTournament } from '@parry-gg/client';
 import { IpcRendererEvent, contextBridge, ipcRenderer } from 'electron';
-import {
-  Tournament as ParryggTournament,
-  MatchResult,
-  Seed,
-} from '@parry-gg/client';
-import { ParryGameData } from './parrygg';
 import {
   AdminedTournament,
   ChallongeMatchItem,
   ChallongeTournament,
   Context,
+  CopyHostFormat,
+  CopyHostOrClient,
   CopySettings,
+  EnforcePlayerFailure,
+  EnforceState,
+  EnforcerSetting,
   Id,
   InvalidReplay,
   Mode,
+  OfflineModeStatus,
   Output,
+  RendererOfflineModeTournament,
+  RendererWave,
   Replay,
   ReportSettings,
+  SelectedSetChain,
   Set,
   SlpDownloadStatus,
+  StartggGame,
   StartggSet,
   Tournament,
   WebSocketServerStatus,
-  CopyHostOrClient,
-  EnforceState,
-  EnforcerSetting,
-  CopyHostFormat,
-  EnforcePlayerFailure,
-  RendererWave,
-  RendererOfflineModeTournament,
-  SelectedSetChain,
-  OfflineModeStatus,
-  StartggGame,
 } from '../common/types';
+import { ParryGameData } from './parrygg';
 
 const electronHandler = {
   onSlpDownloadStatus: (
@@ -229,8 +225,6 @@ const electronHandler = {
     gameDataList?: ParryGameData[],
   ): Promise<Set> =>
     ipcRenderer.invoke('reportParryggSet', setId, result, gameDataList),
-  getParryggSeedMap: (): Promise<Record<string, Seed.AsObject>> =>
-    ipcRenderer.invoke('getParryggSeedMap'),
   getOfflineModeStatus: (): Promise<OfflineModeStatus> =>
     ipcRenderer.invoke('getOfflineModeStatus'),
   getCurrentOfflineModeTournament: (): Promise<RendererOfflineModeTournament> =>

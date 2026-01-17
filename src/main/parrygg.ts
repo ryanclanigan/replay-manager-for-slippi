@@ -35,7 +35,7 @@ import {
   CharacterSelection,
   MatchGameState,
 } from '@parry-gg/client';
-import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb';
+import * as protobufHelper from 'google-protobuf/google/protobuf/struct_pb';
 import XMLHttpRequest from 'xhr2';
 import {
   ParryggBracket,
@@ -616,13 +616,10 @@ function buildMatchGameMutation(gameData: ParryGameData): MatchGameMutation {
       const charSelection = new CharacterSelection();
       charSelection.setCharacterSlug(p.characterSlug);
       if (p.colorVariant) {
-        const variant = new google_protobuf_struct_pb.Struct();
+        const variant = new protobufHelper.Struct();
         variant
           .getFieldsMap()
-          .set(
-            'color',
-            google_protobuf_struct_pb.Value.fromJavaScript(p.colorVariant),
-          );
+          .set('color', protobufHelper.Value.fromJavaScript(p.colorVariant));
         charSelection.setVariant(variant);
       }
       participant.setCharactersList([charSelection]);
@@ -678,8 +675,4 @@ export async function createParryggMatchGame(
     }
     throw e;
   }
-}
-
-export function getSeedMap(): Map<string, Seed.AsObject> {
-  return seedMap;
 }
