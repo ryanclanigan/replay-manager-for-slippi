@@ -43,7 +43,10 @@ import {
   stageStartggIds,
   startggCharacterIds,
   startggStageIds,
+  slippiToParryCharacterSlug,
+  characterCostumeColors,
 } from '../common/constants';
+import { ParryGameData } from '../main/parrygg';
 import LabeledCheckbox from './LabeledCheckbox';
 import getCharacterIcon from './getCharacterIcon';
 import { assertInteger, assertString } from '../common/asserts';
@@ -250,6 +253,7 @@ export default function SetControls({
   reportParryggSet: (
     result: MatchResult.AsObject,
     originalSet: Set,
+    gameDataList?: ParryGameData[],
   ) => Promise<Set | undefined>;
   reportOfflineModeSet: (set: StartggSet) => Promise<Set>;
   setReportSettings: (newReportSettings: ReportSettings) => Promise<void>;
@@ -472,6 +476,61 @@ export default function SetControls({
         },
       ],
     };
+  };
+
+  const getParryGameDataList = (): ParryGameData[] => {
+    // Skip character reporting for DQ sets
+    if (isDq) {
+      return [];
+    }
+
+    return selectedReplays.map((replay, gameIndex) => {
+      const gameWinnerId = replay.players.find((p) => p.isWinner)
+        ?.playerOverrides.entrantId;
+      const validPlayers = replay.players.filter(isValid);
+
+      // Group players by entrant (slot)
+      const entrant1Players = validPlayers.filter(
+        (p) => p.playerOverrides.entrantId === set.entrant1Id,
+      );
+      const entrant2Players = validPlayers.filter(
+        (p) => p.playerOverrides.entrantId === set.entrant2Id,
+      );
+
+      return {
+        gameIndex,
+        slots: [
+          {
+            slot: 0,
+            placement: gameWinnerId === set.entrant1Id ? 1 : 2,
+            participants: entrant1Players.map((p) => {
+              const slug =
+                slippiToParryCharacterSlug.get(p.externalCharacterId) ||
+                'unknown';
+              return {
+                userId: p.playerOverrides.participantId as string,
+                characterSlug: slug,
+                colorVariant: characterCostumeColors[slug]?.[p.costumeIndex],
+              };
+            }),
+          },
+          {
+            slot: 1,
+            placement: gameWinnerId === set.entrant2Id ? 1 : 2,
+            participants: entrant2Players.map((p) => {
+              const slug =
+                slippiToParryCharacterSlug.get(p.externalCharacterId) ||
+                'unknown';
+              return {
+                userId: p.playerOverrides.participantId as string,
+                characterSlug: slug,
+                colorVariant: characterCostumeColors[slug]?.[p.costumeIndex],
+              };
+            }),
+          },
+        ],
+      };
+    });
   };
 
   let deleteOverrideReason = '';
@@ -936,7 +995,11 @@ export default function SetControls({
                     challongeMatchItems,
                   );
                 } else if (mode === Mode.PARRYGG) {
-                  updatedSet = await reportParryggSet(parryggMatchResult, set);
+                  updatedSet = await reportParryggSet(
+                    parryggMatchResult,
+                    set,
+                    getParryGameDataList(),
+                  );
                 } else if (mode === Mode.OFFLINE_MODE) {
                   updatedSet = await reportOfflineModeSet(startggSet);
                 }

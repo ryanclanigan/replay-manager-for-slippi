@@ -202,3 +202,64 @@ export const highlightColor = '#ffee58';
 
 export const calledColor = '#f9a825';
 export const startedColor = '#0d8225';
+
+// Slippi external character ID to parry.gg character slug
+export const slippiToParryCharacterSlug = new Map<number, string>([
+  [0, 'captain-falcon'],
+  [1, 'donkey-kong'],
+  [2, 'fox'],
+  [3, 'mr-game-and-watch'],
+  [4, 'kirby'],
+  [5, 'bowser'],
+  [6, 'link'],
+  [7, 'luigi'],
+  [8, 'mario'],
+  [9, 'marth'],
+  [10, 'mewtwo'],
+  [11, 'ness'],
+  [12, 'peach'],
+  [13, 'pikachu'],
+  [14, 'ice-climbers'],
+  [15, 'jigglypuff'],
+  [16, 'samus'],
+  [17, 'yoshi'],
+  [18, 'zelda'],
+  [19, 'sheik'],
+  [20, 'falco'],
+  [21, 'young-link'],
+  [22, 'doctor-mario'],
+  [23, 'roy'],
+  [24, 'pichu'],
+  [25, 'ganondorf'],
+]);
+
+// Maps character slug -> array of parry.gg color names by costume index
+// Index 0 = default costume (undefined), subsequent indices = alt colors
+export const characterCostumeColors: Record<string, (string | undefined)[]> = {
+  'captain-falcon': [undefined, 'black', 'blue', 'green', 'red', 'white'],
+  'donkey-kong': [undefined, 'black', 'blue', 'green', 'red'],
+  fox: [undefined, 'blue', 'green', 'red'],
+  'mr-game-and-watch': [undefined, 'blue', 'green', 'red'],
+  kirby: [undefined, 'blue', 'green', 'red', 'white', 'yellow'],
+  bowser: [undefined, 'black', 'blue', 'giga', 'red'],
+  link: [undefined, 'black', 'blue', 'red', 'white'],
+  luigi: [undefined, 'blue', 'red', 'white'],
+  mario: [undefined, 'blue', 'black', 'green', 'yellow'],
+  marth: [undefined, 'black', 'green', 'red', 'white'],
+  mewtwo: [undefined, 'blue', 'green', 'red'],
+  ness: [undefined, 'blue', 'green', 'gold'],
+  peach: [undefined, 'blue', 'gold', 'green', 'white'],
+  pikachu: [undefined, 'blue', 'green', 'red'],
+  'ice-climbers': [undefined, 'green', 'yellow', 'red'],
+  jigglypuff: [undefined, 'red', 'blue', 'gold', 'green'],
+  samus: [undefined, 'blue', 'dark', 'green', 'pink'],
+  yoshi: [undefined, 'blue', 'cyan', 'pink', 'red', 'yellow'],
+  zelda: [undefined, 'blue', 'green', 'white', 'red'],
+  sheik: [undefined, 'white', 'red', 'green', 'blue'],
+  falco: [undefined, 'blue', 'green', 'red'],
+  'young-link': [undefined, 'black', 'blue', 'red', 'white'],
+  'doctor-mario': [undefined, 'black', 'blue', 'green', 'red'],
+  roy: [undefined, 'blue', 'green', 'red', 'gold'],
+  pichu: [undefined, 'blue', 'green', 'red'],
+  ganondorf: [undefined, 'blue', 'green', 'purple', 'red'],
+};

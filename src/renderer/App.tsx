@@ -61,6 +61,7 @@ import {
   Tournament as ParryggTournament,
   MatchResult,
 } from '@parry-gg/client';
+import { ParryGameData } from '../main/parrygg';
 import {
   AdminedTournament,
   ChallongeMatchItem,
@@ -1364,10 +1365,15 @@ function Hello() {
     [resetDq],
   );
   const reportParryggSet = useCallback(
-    async (result: MatchResult.AsObject, originalSet: Set) => {
+    async (
+      result: MatchResult.AsObject,
+      originalSet: Set,
+      gameDataList?: ParryGameData[],
+    ) => {
       const updatedSet = await window.electron.reportParryggSet(
         assertString(originalSet.id),
         result,
+        gameDataList,
       );
       resetDq();
       return updatedSet;

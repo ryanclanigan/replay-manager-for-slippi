@@ -26,7 +26,15 @@ import {
   Event,
   Seed,
   BracketType,
+  MatchGameServiceClient,
+  CreateMatchGameRequest,
+  MatchGameMutation,
+  GameSlotMutation,
+  GameParticipantMutation,
+  CharacterSelection,
+  MatchGameState,
 } from '@parry-gg/client';
+import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb';
 import XMLHttpRequest from 'xhr2';
 import {
   ParryggBracket,
@@ -65,6 +73,7 @@ const matchClient = new MatchServiceClient(PARRYGG_API_BASE);
 const bracketClient = new BracketServiceClient(PARRYGG_API_BASE);
 const eventClient = new EventServiceClient(PARRYGG_API_BASE);
 const phaseClient = new PhaseServiceClient(PARRYGG_API_BASE);
+const matchGameClient = new MatchGameServiceClient(PARRYGG_API_BASE);
 
 function createAuthMetadata(apiKey: string): { [key: string]: string } {
   return {
@@ -570,4 +579,72 @@ export async function reportParryggSet(
 
   await matchClient.setMatchResult(request, createAuthMetadata(apiKey));
   return getSelectedParryggSet();
+}
+
+export interface ParryGameParticipant {
+  userId: string;
+  characterSlug: string;
+  colorVariant?: string;
+}
+
+export interface ParryGameSlot {
+  slot: number;
+  placement: number;
+  participants: ParryGameParticipant[];
+}
+
+export interface ParryGameData {
+  gameIndex: number;
+  slots: ParryGameSlot[];
+}
+
+export async function createParryggMatchGame(
+  apiKey: string,
+  matchId: string,
+  gameData: ParryGameData,
+): Promise<void> {
+  const request = new CreateMatchGameRequest();
+  request.setMatchId(matchId);
+
+  const mutation = new MatchGameMutation();
+  mutation.setIndex(gameData.gameIndex);
+  mutation.setState(MatchGameState.MATCH_GAME_STATE_COMPLETED);
+
+  const slotMutations: GameSlotMutation[] = gameData.slots.map((slotData) => {
+    const slotMutation = new GameSlotMutation();
+    slotMutation.setSlot(slotData.slot);
+    slotMutation.setPlacement(slotData.placement);
+
+    const participants = slotData.participants.map((p) => {
+      const participant = new GameParticipantMutation();
+      participant.setUserId(p.userId);
+
+      const charSelection = new CharacterSelection();
+      charSelection.setCharacterSlug(p.characterSlug);
+      if (p.colorVariant) {
+        const variant = new google_protobuf_struct_pb.Struct();
+        variant
+          .getFieldsMap()
+          .set(
+            'color',
+            google_protobuf_struct_pb.Value.fromJavaScript(p.colorVariant),
+          );
+        charSelection.setVariant(variant);
+      }
+      participant.setCharactersList([charSelection]);
+      return participant;
+    });
+
+    slotMutation.setParticipantsList(participants);
+    return slotMutation;
+  });
+
+  mutation.setSlotsList(slotMutations);
+  request.setMatchGame(mutation);
+
+  await matchGameClient.createMatchGame(request, createAuthMetadata(apiKey));
+}
+
+export function getSeedMap(): Map<string, Seed.AsObject> {
+  return seedMap;
 }

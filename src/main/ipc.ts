@@ -89,6 +89,9 @@ import {
   startParryggSet,
   getAdminedParryggTournaments,
   getSelectedParryggSetChain,
+  createParryggMatchGame,
+  getSeedMap,
+  ParryGameData,
 } from './parrygg';
 import {
   appendEnforcerResult,
@@ -1245,11 +1248,26 @@ export default function setupIPCs(
   ipcMain.removeHandler('reportParryggSet');
   ipcMain.handle(
     'reportParryggSet',
-    async (event, setId: string, result: MatchResult.AsObject) => {
+    async (
+      event,
+      setId: string,
+      result: MatchResult.AsObject,
+      gameDataList?: ParryGameData[],
+    ) => {
       if (!parryggApiKey) {
         throw new Error('Please set parry.gg API key.');
       }
       const updatedSet = await reportParryggSet(parryggApiKey, setId, result);
+
+      // Create match games with character selections if game data provided
+      if (gameDataList && gameDataList.length > 0) {
+        await Promise.all(
+          gameDataList.map((gameData) =>
+            createParryggMatchGame(parryggApiKey, setId, gameData),
+          ),
+        );
+      }
+
       await getParryggBracket(
         parryggApiKey,
         assertString(selectedPhaseGroupId),
@@ -1261,6 +1279,15 @@ export default function setupIPCs(
       return updatedSet;
     },
   );
+
+  ipcMain.removeHandler('getParryggSeedMap');
+  ipcMain.handle('getParryggSeedMap', () => {
+    const seedMapObj: Record<string, any> = {};
+    getSeedMap().forEach((value, key) => {
+      seedMapObj[key] = value;
+    });
+    return seedMapObj;
+  });
 
   ipcMain.removeHandler('getOfflineModeStatus');
   ipcMain.handle('getOfflineModeStatus', getOfflineModeStatus);

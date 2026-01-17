@@ -1,5 +1,10 @@
 import { IpcRendererEvent, contextBridge, ipcRenderer } from 'electron';
-import { Tournament as ParryggTournament, MatchResult } from '@parry-gg/client';
+import {
+  Tournament as ParryggTournament,
+  MatchResult,
+  Seed,
+} from '@parry-gg/client';
+import { ParryGameData } from './parrygg';
 import {
   AdminedTournament,
   ChallongeMatchItem,
@@ -221,7 +226,11 @@ const electronHandler = {
   reportParryggSet: (
     setId: string,
     result: MatchResult.AsObject,
-  ): Promise<Set> => ipcRenderer.invoke('reportParryggSet', setId, result),
+    gameDataList?: ParryGameData[],
+  ): Promise<Set> =>
+    ipcRenderer.invoke('reportParryggSet', setId, result, gameDataList),
+  getParryggSeedMap: (): Promise<Record<string, Seed.AsObject>> =>
+    ipcRenderer.invoke('getParryggSeedMap'),
   getOfflineModeStatus: (): Promise<OfflineModeStatus> =>
     ipcRenderer.invoke('getOfflineModeStatus'),
   getCurrentOfflineModeTournament: (): Promise<RendererOfflineModeTournament> =>

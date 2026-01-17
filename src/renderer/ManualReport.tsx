@@ -23,6 +23,7 @@ import {
   StartggSet,
   State,
 } from '../common/types';
+import { ParryGameData } from '../main/parrygg';
 import { assertInteger, assertString } from '../common/asserts';
 
 function createStartggGameData(
@@ -89,6 +90,7 @@ export default function ManualReport({
   reportParryggSet: (
     result: MatchResult.AsObject,
     originalSet: Set,
+    gameDataList?: ParryGameData[],
   ) => Promise<Set | undefined>;
   reportOfflineModeSet: (set: StartggSet) => Promise<Set>;
   selectedSet: Set;
