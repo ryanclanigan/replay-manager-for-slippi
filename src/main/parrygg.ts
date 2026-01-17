@@ -660,8 +660,7 @@ export async function createParryggMatchGame(
     ) {
       // Delete the existing game
       const deleteRequest = new DeleteMatchGameRequest();
-      deleteRequest.setMatchId(matchId);
-      deleteRequest.setIndex(gameData.gameIndex);
+      deleteRequest.setId(matchId);
       await matchGameClient.deleteMatchGame(
         deleteRequest,
         createAuthMetadata(apiKey),
