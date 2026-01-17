@@ -28,7 +28,6 @@ import {
   BracketType,
   MatchGameServiceClient,
   CreateMatchGameRequest,
-  UpdateMatchGameRequest,
   MatchGameMutation,
   GameSlotMutation,
   GameParticipantMutation,
@@ -644,7 +643,6 @@ export async function createParryggMatchGame(
 ): Promise<void> {
   const mutation = buildMatchGameMutation(gameData);
 
-  // Try to create first
   try {
     const createRequest = new CreateMatchGameRequest();
     createRequest.setMatchId(matchId);
@@ -654,22 +652,16 @@ export async function createParryggMatchGame(
       createAuthMetadata(apiKey),
     );
   } catch (e: unknown) {
-    // If game already exists (duplicate key), try to update instead
+    // If game already exists (duplicate key), silently skip
+    // The game data is already present from a previous report
     if (
       e instanceof Error &&
       e.message.includes('duplicate key value violates unique constraint')
     ) {
-      const updateRequest = new UpdateMatchGameRequest();
-      updateRequest.setMatchId(matchId);
-      updateRequest.setIndex(gameData.gameIndex);
-      updateRequest.setMatchGame(mutation);
-      await matchGameClient.updateMatchGame(
-        updateRequest,
-        createAuthMetadata(apiKey),
-      );
-    } else {
-      throw e;
+      // Game already exists, nothing to do
+      return;
     }
+    throw e;
   }
 }
 
